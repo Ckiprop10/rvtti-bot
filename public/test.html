@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RVTTI Chatbot Test</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .test-section { margin: 20px 0; padding: 15px; border: 1px solid #ccc; }
+        button { padding: 10px 20px; margin: 5px; }
+        #output { background: #f5f5f5; padding: 10px; margin: 10px 0; min-height: 100px; }
+        .success { color: green; }
+        .error { color: red; }
+    </style>
+</head>
+<body>
+    <h1>RVTTI Chatbot Frontend Test</h1>
+    
+    <div class="test-section">
+        <h3>1. Test API Connection</h3>
+        <button onclick="testAPI()">Test API</button>
+        <div id="api-result"></div>
+    </div>
+
+    <div class="test-section">
+        <h3>2. Test Chat Function</h3>
+        <input type="text" id="testMessage" placeholder="Enter test message" value="Hello">
+        <button onclick="testChat()">Send Test Message</button>
+        <div id="chat-result"></div>
+    </div>
+
+    <div class="test-section">
+        <h3>3. Test DOM Elements</h3>
+        <button onclick="testDOM()">Test DOM</button>
+        <div id="dom-result"></div>
+    </div>
+
+    <div class="test-section">
+        <h3>4. Console Output</h3>
+        <div id="output"></div>
+    </div>
+
+    <script>
+        function log(message, type = 'info') {
+            const output = document.getElementById('output');
+            const timestamp = new Date().toLocaleTimeString();
+            const className = type === 'error' ? 'error' : type === 'success' ? 'success' : '';
+            output.innerHTML += `<div class="${className}">[${timestamp}] ${message}</div>`;
+            output.scrollTop = output.scrollHeight;
+            console.log(message);
+        }
+
+        async function testAPI() {
+            log('Testing API connection...');
+            const resultDiv = document.getElementById('api-result');
+            
+            try {
+                const response = await fetch('/api/health');
+                const data = await response.json();
+                
+                if (response.ok) {
+                    resultDiv.innerHTML = '<div class="success">✅ API is working! Status: ' + data.status + '</div>';
+                    log('✅ API test successful', 'success');
+                } else {
+                    resultDiv.innerHTML = '<div class="error">❌ API error: ' + response.status + '</div>';
+                    log('❌ API test failed: ' + response.status, 'error');
+                }
+            } catch (error) {
+                resultDiv.innerHTML = '<div class="error">❌ API connection failed: ' + error.message + '</div>';
+                log('❌ API connection failed: ' + error.message, 'error');
+            }
+        }
+
+        async function testChat() {
+            log('Testing chat function...');
+            const resultDiv = document.getElementById('chat-result');
+            const message = document.getElementById('testMessage').value;
+            
+            try {
+                const response = await fetch('/api/chat', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ message })
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok) {
+                    resultDiv.innerHTML = '<div class="success">✅ Chat working! Reply: ' + data.reply.substring(0, 50) + '...</div>';
+                    log('✅ Chat test successful', 'success');
+                } else {
+                    resultDiv.innerHTML = '<div class="error">❌ Chat error: ' + response.status + '</div>';
+                    log('❌ Chat test failed: ' + response.status, 'error');
+                }
+            } catch (error) {
+                resultDiv.innerHTML = '<div class="error">❌ Chat failed: ' + error.message + '</div>';
+                log('❌ Chat test failed: ' + error.message, 'error');
+            }
+        }
+
+        function testDOM() {
+            log('Testing DOM elements...');
+            const resultDiv = document.getElementById('dom-result');
+            
+            try {
+                // Test if we can access elements from the main page
+                const mainPage = window.open('/index.html', '_blank');
+                if (mainPage) {
+                    resultDiv.innerHTML = '<div class="success">✅ Main page opened successfully</div>';
+                    log('✅ Main page opened successfully', 'success');
+                } else {
+                    resultDiv.innerHTML = '<div class="error">❌ Could not open main page</div>';
+                    log('❌ Could not open main page', 'error');
+                }
+            } catch (error) {
+                resultDiv.innerHTML = '<div class="error">❌ DOM test failed: ' + error.message + '</div>';
+                log('❌ DOM test failed: ' + error.message, 'error');
+            }
+        }
+
+        // Auto-run API test on page load
+        window.addEventListener('load', () => {
+            log('Test page loaded');
+            setTimeout(testAPI, 1000);
+        });
+    </script>
+</body>
+</html> 

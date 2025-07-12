@@ -1,0 +1,467 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>RVTTI AI Chatbot</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --primary: #0057b7;
+      --light: #f5faff;
+      --white: #ffffff;
+      --gray: #f0f0f0;
+    }
+    * { box-sizing: border-box; }
+    body {
+      font-family: 'Inter', sans-serif;
+      margin: 0;
+      background: var(--light);
+      color: #333;
+    }
+    header {
+      background-color: var(--primary);
+      color: var(--white);
+      padding: 1.5rem 1rem;
+      text-align: center;
+    }
+    header h1 { margin: 0; font-size: 2rem; }
+    header p { margin: 0.5rem 0 0; font-size: 1rem; }
+
+    .main-layout {
+      display: flex;
+      max-width: 1100px;
+      margin: 2rem auto;
+      gap: 1rem;
+    }
+
+    .sidebar {
+      width: 220px;
+      background: #ffffff;
+      border-radius: 12px;
+      box-shadow: 0 6px 16px rgba(0,0,0,0.05);
+      padding: 1rem;
+    }
+
+    .sidebar h3 {
+      font-size: 1.1rem;
+      margin-bottom: 1rem;
+      color: #0057b7;
+    }
+
+    .sidebar ul { list-style: none; padding: 0; margin: 0; }
+    .sidebar li {
+      margin-bottom: 0.75rem;
+      cursor: pointer;
+      color: #333;
+      font-weight: 500;
+      padding: 0.5rem;
+      border-radius: 6px;
+      transition: background 0.2s;
+    }
+    .sidebar li:hover { background: #e3f2fd; }
+
+    .chat-container {
+      flex: 1;
+      background: var(--white);
+      border-radius: 12px;
+      box-shadow: 0 8px 20px rgba(0,0,0,0.08);
+      display: flex;
+      flex-direction: column;
+      padding: 1rem;
+    }
+
+    .chat-box {
+      height: 400px;
+      overflow-y: auto;
+      border: 1px solid var(--gray);
+      border-radius: 8px;
+      padding: 1rem;
+      background: #ffffff;
+    }
+
+    .message {
+      display: flex;
+      align-items: flex-start;
+      gap: 0.75rem;
+      margin: 1rem 0;
+      max-width: 90%;
+    }
+
+    .user { flex-direction: row-reverse; align-self: flex-end; }
+    .bot { align-self: flex-start; }
+
+    .message .bubble {
+      padding: 0.75rem 1rem;
+      border-radius: 12px;
+      background-color: #e3f2fd;
+      font-size: 1rem;
+      line-height: 1.5;
+    }
+
+    .user .bubble { background-color: #e3f2fd; }
+    .bot .bubble { background-color: #f1f1f1; }
+
+    .avatar {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      background-size: cover;
+    }
+
+    form {
+      display: flex;
+      margin-top: 1rem;
+      gap: 1rem;
+    }
+
+    input[type="text"] {
+      flex: 1;
+      padding: 0.75rem;
+      border: 1px solid #ccc;
+      border-radius: 8px;
+      font-size: 1rem;
+    }
+
+    button {
+      background: var(--primary);
+      color: white;
+      border: none;
+      padding: 0.75rem 1.5rem;
+      font-size: 1rem;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      position: relative;
+    }
+
+    button:hover {
+      background: #004494;
+      transform: translateY(-1px);
+    }
+
+    button:disabled {
+      background: #ccc;
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    .loading {
+      display: inline-block;
+      width: 20px;
+      height: 20px;
+      border: 3px solid #ffffff;
+      border-radius: 50%;
+      border-top-color: transparent;
+      animation: spin 1s ease-in-out infinite;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    .error-message {
+      background: #ffebee;
+      color: #c62828;
+      padding: 0.75rem;
+      border-radius: 8px;
+      margin: 0.5rem 0;
+      border-left: 4px solid #c62828;
+    }
+
+    .typing-indicator {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.75rem 1rem;
+      background: #f1f1f1;
+      border-radius: 12px;
+      margin: 1rem 0;
+    }
+
+    .typing-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #666;
+      animation: typing 1.4s infinite ease-in-out;
+    }
+
+    .typing-dot:nth-child(1) { animation-delay: -0.32s; }
+    .typing-dot:nth-child(2) { animation-delay: -0.16s; }
+
+    @keyframes typing {
+      0%, 80%, 100% { transform: scale(0); }
+      40% { transform: scale(1); }
+    }
+
+    footer {
+      text-align: center;
+      padding: 1rem;
+      font-size: 0.85rem;
+      color: #666;
+      margin-top: 2rem;
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <h1>RVTTI AI Assistant</h1>
+  <p>Smart Helpdesk for Rift Valley Technical Training Institute Students</p>
+</header>
+
+<div class="main-layout">
+  <aside class="sidebar">
+    <h3>FAQ Categories</h3>
+    <ul id="faqList">
+      <li onclick="sendCategory('Admissions information')">Admissions</li>
+      <li onclick="sendCategory('What courses are offered?')">Courses</li>
+      <li onclick="sendCategory('Fee payment options')">Finance</li>
+      <li onclick="sendCategory('How to reset portal password')">Portal Help</li>
+      <li onclick="sendCategory('How to contact RVTTI')">Contact & Location</li>
+    </ul>
+  </aside>
+
+  <div class="chat-container">
+    <div class="chat-box" id="chatBox"></div>
+    <div id="errorContainer"></div>
+    <form id="chatForm">
+      <input type="text" id="userInput" placeholder="Type your question..." required />
+      <button type="button" id="micBtn">🎤</button>
+      <button type="submit" id="sendBtn">Send</button>
+    </form>
+  </div>
+</div>
+
+<footer>
+  &copy; 2025 Rift Valley Technical Training Institute. All Rights Reserved.
+</footer>
+
+<script>
+const form = document.getElementById('chatForm');
+const chatBox = document.getElementById('chatBox');
+const userInput = document.getElementById('userInput');
+const sendBtn = document.getElementById('sendBtn');
+const errorContainer = document.getElementById('errorContainer');
+
+let isProcessing = false;
+
+// Utility functions
+function showError(message) {
+  errorContainer.innerHTML = `<div class="error-message">${message}</div>`;
+  setTimeout(() => {
+    errorContainer.innerHTML = '';
+  }, 5000);
+}
+
+function showTypingIndicator() {
+  const typingDiv = document.createElement('div');
+  typingDiv.classList.add('message', 'bot', 'typing-indicator');
+  typingDiv.id = 'typing-indicator';
+  
+  const avatar = document.createElement('div');
+  avatar.classList.add('avatar');
+  avatar.style.backgroundImage = "url('https://cdn-icons-png.flaticon.com/512/4712/4712027.png')";
+  
+  const typingContent = document.createElement('div');
+  typingContent.classList.add('bubble');
+  typingContent.innerHTML = `
+    <div style="display: flex; align-items: center; gap: 0.5rem;">
+      <span>RVTTI Assistant is typing</span>
+      <div class="typing-dot"></div>
+      <div class="typing-dot"></div>
+      <div class="typing-dot"></div>
+    </div>
+  `;
+  
+  typingDiv.appendChild(avatar);
+  typingDiv.appendChild(typingContent);
+  chatBox.appendChild(typingDiv);
+  chatBox.scrollTop = chatBox.scrollHeight;
+}
+
+function removeTypingIndicator() {
+  const typingIndicator = document.getElementById('typing-indicator');
+  if (typingIndicator) {
+    typingIndicator.remove();
+  }
+}
+
+function setLoadingState(loading) {
+  isProcessing = loading;
+  sendBtn.disabled = loading;
+  userInput.disabled = loading;
+  
+  if (loading) {
+    sendBtn.innerHTML = '<span class="loading"></span>';
+  } else {
+    sendBtn.innerHTML = 'Send';
+  }
+}
+
+async function sendMessage(message) {
+  try {
+    console.log('Sending message:', message);
+    setLoadingState(true);
+    showTypingIndicator();
+    
+    const response = await fetch('/api/chat', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ message })
+    });
+
+    console.log('Response status:', response.status);
+    removeTypingIndicator();
+    
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.error || `HTTP ${response.status}`);
+    }
+
+    const data = await response.json();
+    console.log('Response data:', data);
+    appendMessage(data.reply, 'bot');
+    
+  } catch (error) {
+    removeTypingIndicator();
+    console.error('Error sending message:', error);
+    
+    let errorMessage = 'Failed to send message. Please try again.';
+    if (error.message.includes('Failed to fetch')) {
+      errorMessage = 'Network error. Please check your connection.';
+    } else if (error.message.includes('timeout')) {
+      errorMessage = 'Request timed out. Please try again.';
+    } else if (error.message.includes('503')) {
+      errorMessage = 'AI service is temporarily unavailable. Please try again later.';
+    }
+    
+    showError(errorMessage);
+  } finally {
+    setLoadingState(false);
+  }
+}
+
+form.addEventListener('submit', async (e) => {
+  e.preventDefault();
+  console.log('Form submitted');
+  
+  if (isProcessing) {
+    console.log('Already processing, ignoring submission');
+    return;
+  }
+  
+  const userText = userInput.value.trim();
+  if (!userText) {
+    console.log('Empty message, ignoring');
+    return;
+  }
+  
+  console.log('Appending user message:', userText);
+  appendMessage(userText, 'user');
+  userInput.value = '';
+  
+  console.log('Sending message to API');
+  await sendMessage(userText);
+});
+
+function appendMessage(text, type) {
+  console.log('Appending message:', text, 'Type:', type);
+  
+  const msg = document.createElement('div');
+  msg.classList.add('message', type);
+
+  const avatar = document.createElement('div');
+  avatar.classList.add('avatar');
+  avatar.style.backgroundImage = type === 'user'
+    ? "url('https://cdn-icons-png.flaticon.com/512/1946/1946429.png')"
+    : "url('https://cdn-icons-png.flaticon.com/512/4712/4712027.png')";
+
+  const bubble = document.createElement('div');
+  bubble.classList.add('bubble');
+  
+  // Sanitize and format text
+  let formattedText = text
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#x27;');
+    
+  // Format markdown-style bold text
+  formattedText = formattedText.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+  formattedText = formattedText.replace(/\n/g, '<br>');
+  
+  bubble.innerHTML = formattedText;
+
+  msg.appendChild(avatar);
+  msg.appendChild(bubble);
+  chatBox.appendChild(msg);
+  chatBox.scrollTop = chatBox.scrollHeight;
+  
+  console.log('Message appended successfully');
+}
+
+async function sendCategory(text) {
+  if (isProcessing) return;
+  
+  appendMessage(text, 'user');
+  await sendMessage(text);
+}
+
+// Voice recognition
+const micBtn = document.getElementById('micBtn');
+if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
+  const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+  const recognition = new SpeechRecognition();
+  recognition.lang = 'en-US';
+  recognition.continuous = false;
+  recognition.interimResults = false;
+
+  micBtn.addEventListener('click', () => {
+    if (isProcessing) return;
+    
+    try {
+      recognition.start();
+      micBtn.style.background = '#ff4444';
+    } catch (error) {
+      showError('Voice recognition failed to start');
+    }
+  });
+
+  recognition.onresult = (event) => {
+    const transcript = event.results[0][0].transcript;
+    userInput.value = transcript;
+    userInput.focus();
+    micBtn.style.background = '';
+  };
+
+  recognition.onerror = (event) => {
+    micBtn.style.background = '';
+    showError(`Voice input failed: ${event.error}`);
+  };
+  
+  recognition.onend = () => {
+    micBtn.style.background = '';
+  };
+} else {
+  micBtn.style.display = 'none';
+}
+
+// Auto-resize input
+userInput.addEventListener('input', function() {
+  this.style.height = 'auto';
+  this.style.height = Math.min(this.scrollHeight, 100) + 'px';
+});
+
+// Welcome message
+window.addEventListener('load', () => {
+  setTimeout(() => {
+    appendMessage('Hello! I\'m the RVTTI AI Assistant. How can I help you today? You can ask me about admissions, courses, fees, or any other information about Rift Valley Technical Training Institute.', 'bot');
+  }, 500);
+});
+</script>
+
+</body>
+</html>
